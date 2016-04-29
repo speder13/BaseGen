@@ -2,6 +2,8 @@
  * Created by Søren on 29-04-2016.
  */
 import java.io.*;
+import java.io.FileWriter;
+
 public class WriterClass {
         //setup filewrite
         File outputFile;

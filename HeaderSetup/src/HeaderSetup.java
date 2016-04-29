@@ -1,15 +1,11 @@
-
-/*Offers functionality to build a Java file header*/
-
-import com.sun.org.apache.xerces.internal.xs.StringList;
-
 import java.util.ArrayList;
 import java.util.List;
 
+/*Offers functionality to build a Java file header*/
 public class HeaderSetup {
 
     //Builds, then returns, a header. One line per string in the list.
-    List<String> BuildHeader()
+    ArrayList<String> BuildHeader()
     {
         ArrayList<String> Header = new ArrayList<String>();
         Header.add("import java.util.ArrayList;");
