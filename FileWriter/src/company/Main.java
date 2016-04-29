@@ -1,8 +1,9 @@
-package company;
+import java.io.*;
 
 public class Main {
 
-    public static void main(String[] args) {
-	// write your code here
+    public static void main(String[] args)throws IOException {
+	WriterClass W=new WriterClass();
+        W.WriteThis();
     }
 }

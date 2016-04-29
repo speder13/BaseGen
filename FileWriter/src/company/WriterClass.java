@@ -9,8 +9,10 @@ public class WriterClass {
         //setup filewrite
         public File outputFile;
         public FileWriter writer;
+    HeaderSetup headerSetup;
 
     public WriterClass()throws IOException{
+        headerSetup = new HeaderSetup();
         outputFile = new File("output.java");
         outputFile.createNewFile();
         writer = new FileWriter(outputFile);
@@ -18,9 +20,12 @@ public class WriterClass {
 
     public void WriteThis()throws IOException{
         ArrayList<String> result = new ArrayList<String>();
-        result= //funktionskald til setup
-                for
-        writer.write("test");
+        result= headerSetup.BuildHeader();
+        for (String s:result) {
+            writer.write(s + "\n");
+        }
+
+        writer.write("}");
         writer.flush();
         writer.close();
     }
