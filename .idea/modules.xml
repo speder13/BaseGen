@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/FileWriter/FileWriter.iml" filepath="$PROJECT_DIR$/FileWriter/FileWriter.iml" />
-      <module fileurl="file://$PROJECT_DIR$/HeaderSetup/HeaderSetup.iml" filepath="$PROJECT_DIR$/HeaderSetup/HeaderSetup.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/BaseGen.iml" filepath="$PROJECT_DIR$/.idea/BaseGen.iml" />
     </modules>
   </component>
 </project>
