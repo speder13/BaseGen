@@ -17,7 +17,7 @@ public class HeaderSetup {
         Header.add("");
         Header.add("public class Main{");
 
-
+        //Prints out the header file to std out
         System.out.println("The following has been written:");
         for (String item : Header) {
             System.out.println("* " + item);
