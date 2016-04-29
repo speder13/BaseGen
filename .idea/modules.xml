@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/BaseGen.iml" filepath="$PROJECT_DIR$/.idea/BaseGen.iml" />
+      <module fileurl="file://$PROJECT_DIR$/PutinBaseClasses/PutinBaseClasses.iml" filepath="$PROJECT_DIR$/PutinBaseClasses/PutinBaseClasses.iml" />
     </modules>
   </component>
 </project>
