@@ -4,7 +4,6 @@
 import com.sun.org.apache.xerces.internal.xs.StringList;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class HeaderSetup {
@@ -20,8 +19,7 @@ public class HeaderSetup {
 
 
         System.out.println("The following has been written:");
-        for(Iterator<String> i = Header.iterator(); i.hasNext(); ) {
-            String item = i.next();
+        for (String item : Header) {
             System.out.println("* " + item);
         }
 
