@@ -12,6 +12,10 @@ public class Player {
         Name = Input;
     }
 
+    public Turn CurrentTurn(){
+        return null;
+    }
+
     //Getters and Setters
     public String getName() {
         return Name;
