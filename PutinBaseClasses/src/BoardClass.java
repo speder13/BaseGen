@@ -6,7 +6,10 @@ public class BoardClass {
 
     Integer Height;
     Integer Width;
-    public BoardClass(){}
+    public BoardClass(){
+        this.Height = 1;
+        this.Width = 1;
+    }
     public BoardClass(Integer InHeight, Integer InWidth){
         this.Height = InHeight;
         this.Width = InWidth;
