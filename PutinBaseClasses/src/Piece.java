@@ -4,4 +4,8 @@
 /*The SuperClass for Pieces*/
 
 public class Piece {
+
+public Boolean Move(){
+    return false;
+}
 }
