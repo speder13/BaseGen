@@ -6,7 +6,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class WriterClass {
-        //setup filewrite
+        //setup FileWriter
         public File outputFile;
         public FileWriter writer;
     HeaderSetup headerSetup;
@@ -19,14 +19,18 @@ public class WriterClass {
     }
 
     public void WriteThis()throws IOException{
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result;
         result= headerSetup.BuildHeader();
         for (String s:result) {
             writer.write(s + "\n");
         }
 
-        writer.write("}");
+
+        //writer.write("}");
         writer.flush();
         writer.close();
+    }
+    public void GetGeneratedCode(){
+
     }
 }
