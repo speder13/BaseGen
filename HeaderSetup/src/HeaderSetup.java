@@ -12,6 +12,7 @@ public class HeaderSetup {
         Header.add("import java.util.List;");
         Header.add("");
         Header.add("public class Main{");
+        Header.add("BoardClass Board = new BoardClass();");
 
         //Prints out the header file to stdio
         System.out.println("The following has been written:");
