@@ -5,7 +5,13 @@
 
 public class Piece {
 
-public Boolean Move(){
-    return false;
-}
+    public Boolean Move(){
+        return false;
+    }
+    public Boolean PlaceAt(Coordinate Input){
+        return false;
+    }
+    public boolean CanMoveTo(Coordinate Input){
+        return false;
+    }
 }

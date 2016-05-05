@@ -3,4 +3,9 @@
  */
 /*The SuperClass for Turns*/
 public class Turn {
+    String Name;
+    public Turn(String name){
+        Name = name;
+    }
+
 }

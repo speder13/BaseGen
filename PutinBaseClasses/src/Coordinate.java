@@ -18,16 +18,16 @@ public class Coordinate {
         return x;
     }
 
-    public void setX(Integer x) {
-        this.x = x;
+    public void setX(Integer X) {
+        this.x = X;
     }
 
     public Integer getY() {
         return y;
     }
 
-    public void setY(Integer y) {
-        this.y = y;
+    public void setY(Integer Y) {
+        this.y = Y;
     }
 
 }
