@@ -9,6 +9,7 @@ public class WriterClass {
         //setup FileWriter
         public File outputFile;
         public FileWriter writer;
+        ArrayList<String> strings=new ArrayList<String>();
     HeaderSetup headerSetup;
 
     public WriterClass()throws IOException{
@@ -26,11 +27,12 @@ public class WriterClass {
         }
 
 
-        //writer.write("}");
+        writer.write("}");
         writer.flush();
         writer.close();
     }
     public void GetGeneratedCode(){
+        // strings= returmetode fra AST builder
 
     }
 }
