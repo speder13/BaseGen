@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class GenerateCode implements VisitAST{
-    public ArrayList<String> results=new ArrayList<>();
+    public ArrayList<String> results=new ArrayList<String>();
     public ArrayList<String> getThings(ProgramNode node, HashMap<String, SymbolTableEntry> Sym){
         visitProgram(node);
         return results;
