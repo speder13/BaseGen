@@ -1,7 +1,10 @@
 import com.sun.org.apache.xpath.internal.operations.And;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.sun.org.apache.xpath.internal.operations.Div;
 import com.sun.org.apache.xpath.internal.operations.Mod;
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Any;
 import jdk.nashorn.internal.ir.UnaryNode;
+import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 
 import java.util.HashMap;
 import java.util.MissingResourceException;
@@ -15,41 +18,59 @@ public class BuildSymbolTable implements VisitAST{
         SymbolTableEntry entry1 = new SymbolTableEntry();
         entry1.ID = "Height";
         entry1.type = SymbolTableEntry.Type.Number;
-        SymbolTable.put(entry.ID, entry);
+        SymbolTable.put(entry1.ID, entry1);
 
         SymbolTableEntry entry2 = new SymbolTableEntry();
         entry2.ID = "Width";
         entry2.type = SymbolTableEntry.Type.Number;
-        SymbolTable.put(entry.ID, entry);
+        SymbolTable.put(entry2.ID, entry2);
 
         SymbolTableEntry entry3 = new SymbolTableEntry();
         entry3.ID = "IllegalTiles";
         entry3.type = SymbolTableEntry.Type.SpecialTiles;
-        SymbolTable.put(entry.ID, entry);
+        SymbolTable.put(entry3.ID, entry3);
 
         SymbolTableEntry entry4 = new SymbolTableEntry();
         entry4.ID = "ThisBoard";
         entry4.type = SymbolTableEntry.Type.Board;
-        SymbolTable.put(entry.ID, entry);
+        SymbolTable.put(entry4.ID, entry4);
 
         SymbolTableEntry entry5 = new SymbolTableEntry();
         entry5.ID = "ThisBoard.Tiles()";
         entry5.type = SymbolTableEntry.Type.Coordinate;
-        SymbolTable.put(entry.ID, entry);
+
+        SymbolTableEntry entry51 = new SymbolTableEntry();
+        entry51.type = SymbolTableEntry.Type.Coordinate;
+        entry51.ID = "Coordinate";
+        entry5.inputs.add(entry51);
+
+        SymbolTable.put(entry5.ID, entry5);
 
         SymbolTableEntry entry6 = new SymbolTableEntry();
         entry6.ID = "ThisBoard.Tiles().Is()";
         entry6.type = SymbolTableEntry.Type.Boolean;
-        SymbolTable.put(entry.ID, entry);
+
+        SymbolTableEntry entry61 = new SymbolTableEntry();
+        entry61.type = SymbolTableEntry.Type.SpecialTiles;
+        entry61.ID = "SpecialTiles";
+        entry6.inputs.add(entry61);
+
+        SymbolTable.put(entry6.ID, entry6);
 
         SymbolTableEntry entry7 = new SymbolTableEntry();
         entry7.ID = "ThisBoard.Tiles().Count";
         entry7.type = SymbolTableEntry.Type.Number;
-        SymbolTable.put(entry.ID, entry);
+        SymbolTable.put(entry7.ID, entry7);
 
         SymbolTableEntry entry8 = new SymbolTableEntry();
-        entry8.ID = "Input()";
-        SymbolTable.put(entry.ID, entry);
+        entry8.ID = "ThisBoard.Tiles().PieceX.Remove()";
+        entry8.type = SymbolTableEntry.Type.Boolean;
+        SymbolTable.put(entry8.ID, entry8);
+
+        SymbolTableEntry entry9 = new SymbolTableEntry();
+        entry9.ID = "Input()";
+        entry9.type = SymbolTableEntry.Type.Any;
+        SymbolTable.put(entry9.ID, entry9);
 
         visitProgram((ProgramNode) AST);
         return SymbolTable;
@@ -57,13 +78,16 @@ public class BuildSymbolTable implements VisitAST{
 
     @Override
     public void visitProgram(ProgramNode node){
+        for (MethodNode M: node.methodNA) {
+            visitMethod(M);
+        }
         visitBoard(node.BoardN);
         visitPieces(node.PieceN);
         visitSetup(node.SetupN);
         visitRules(node.RulesN);
         visitWinCondition(node.WinConditionN);
         for (MethodNode M: node.methodNA) {
-            visitMethod(M);
+            ReadyMethods(M);
         }
     }
 
@@ -109,71 +133,76 @@ public class BuildSymbolTable implements VisitAST{
     public void visitMethod(MethodNode node) {
         SymbolTableEntry entry = new SymbolTableEntry();
 
-        for (StmtNode S : node.StmtNA) {
-            if (getEntry(S, entry.SymbolTable).ID != ""){
-                entry.SymbolTable.put(getEntry(S, entry.SymbolTable).ID, getEntry(S, entry.SymbolTable));
+        for (int i = 0; i < node.IdNA.size(); i++) {
+            SymbolTableEntry input = new SymbolTableEntry();
+            input.ID = node.IdNA.get(i).Value;
+            switch (node.TypeNA2.get(i).toString()) {
+                case "Piece": input.type = SymbolTableEntry.Type.Piece; break;
+                case "Number": input.type = SymbolTableEntry.Type.Number; break;
+                case "Text": input.type = SymbolTableEntry.Type.Text; break;
+                case "Boolean": input.type = SymbolTableEntry.Type.Boolean; break;
+                case "Player": input.type = SymbolTableEntry.Type.Player; break;
+                case "List": input.type = SymbolTableEntry.Type.List; break;
+                case "Coordinate": input.type = SymbolTableEntry.Type.Coordinate; break;
+            }
+            entry.SymbolTable.put(input.ID, input);
+            entry.inputs.add(input);
+
+            if (input.type == SymbolTableEntry.Type.Piece){
+                SymbolTableEntry E1 = new SymbolTableEntry();
+                E1.type = SymbolTableEntry.Type.Any;
+                E1.ID = input.ID + ".PlaceAt()";
+
+                SymbolTableEntry E11 = new SymbolTableEntry();
+                E11.type = SymbolTableEntry.Type.Coordinate;
+                E11.ID = "Coordinate";
+                E1.inputs.add(E11);
+
+                entry.SymbolTable.put(E1.ID, E1);
+
+                SymbolTableEntry E2 = new SymbolTableEntry();
+                E2.type = SymbolTableEntry.Type.Any;
+                E2.ID = input.ID + ".MoveTo()";
+
+                SymbolTableEntry E21 = new SymbolTableEntry();
+                E21.type = SymbolTableEntry.Type.Coordinate;
+                E21.ID = "Coordinate";
+                E2.inputs.add(E21);
+
+                entry.SymbolTable.put(E2.ID, E2);
             }
         }
 
+        if (node.TypeNA1.size() == 1){
+            switch (node.TypeNA1.get(0).toString()) {
+                case "Piece": entry.type = SymbolTableEntry.Type.Piece; break;
+                case "Number": entry.type = SymbolTableEntry.Type.Number; break;
+                case "Text": entry.type = SymbolTableEntry.Type.Text; break;
+                case "Boolean": entry.type = SymbolTableEntry.Type.Boolean; break;
+                case "Player": entry.type = SymbolTableEntry.Type.Player; break;
+                case "List": entry.type = SymbolTableEntry.Type.List; break;
+                case "Coordinate": entry.type = SymbolTableEntry.Type.Coordinate; break;
+            }
+        }
+        entry.ID = node.IdN.toString() + "()";
+        SymbolTable.put(node.IdN.toString(),entry);
+    }
+
+    public void ReadyMethods(MethodNode node){
+        for (SymbolTableEntry  E : SymbolTable.values()) {
+            SymbolTable.get(node.IdN.toString()).SymbolTable.put(E.ID, E);
+        }
+        for (StmtNode S : node.StmtNA) {
+            if (getEntry(S, SymbolTable.get(node.IdN.toString()).SymbolTable).ID != ""){
+                SymbolTable.get(node.IdN.toString()).SymbolTable.put(getEntry(S, SymbolTable.get(node.IdN.toString()).SymbolTable).ID, getEntry(S, SymbolTable.get(node.IdN.toString()).SymbolTable));
+            }
+        }
         if(node.TypeNA1.size() == 1 && node.ReturnStmtNA.size() == 1) {
-            //Check expression
             ExpressionNode temp = node.ReturnStmtNA.get(0).ExpressionN;
+            SymbolTableEntry.Type T = checkExpression(temp, SymbolTable.get(node.IdN.toString()).SymbolTable);
             TypeNode typeNode = node.TypeNA1.get(0);
-            if (typeNode.toString() == "Number"){
-                if (temp instanceof AddNode || temp instanceof SubtractNode ||
-                        temp instanceof multiplyNode || temp instanceof DivideNode ||
-                        temp instanceof ModNode || temp instanceof MinusNode ||
-                        (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof NumberValueNode)){
-                    entry.type = SymbolTableEntry.Type.Number;
-                }
-            }
-            else if (typeNode.toString() == "Boolean"){
-                if (temp instanceof AndNode || temp instanceof OrNode ||
-                        temp instanceof EqualsNode || temp instanceof NotEqualsNode ||
-                        temp instanceof LessThanNode || temp instanceof LargerThanNode ||
-                        temp instanceof EqualOrLessThanNode || temp instanceof EqualOrLargerThanNode ||
-                        temp instanceof NegationNode || (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof BoolValueNode)){
-                    entry.type = SymbolTableEntry.Type.Boolean;
-                }
-            }
-            else if (typeNode.toString() == "Text"){
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof TextValueNode){
-                    entry.type = SymbolTableEntry.Type.Text;
-                }
-            }
-            else if (typeNode.toString() == "Player"){
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof StmtMethodValueNode){
-                    if (SymbolTable.containsKey(((StmtMethodValueNode) ((ValueTermNode) temp).ValueN).StmtMethodNA.get(0).toString())){
-                        entry.type = SymbolTableEntry.Type.Player;
-                    }
-                    else {
-                        System.out.print("Non defined ID for Player\n");
-                    }
-                }
-            }
-            else if (typeNode.toString() == "List"){
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof ListValueNode){
-                    boolean containId = true;
-                    for (ValueNode V : ((ListValueNode) ((ValueTermNode) temp).ValueN).ValueNA) {
-                        if (V instanceof StmtMethodValueNode){
-                            if (!SymbolTable.containsKey(V.toString())){
-                                containId = false;
-                            }
-                        }
-                    }
-                    if (!containId){
-                        System.out.print("Non defined ID for List\n");
-                    }
-                    entry.type = SymbolTableEntry.Type.List;
-                }
-            }
-            else if (typeNode.toString() == "Coordinate"){
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof CoordinateValueNode){
-                    entry.type = SymbolTableEntry.Type.Coordinate;
-                }
-            }
-            else {
-                System.out.print("Wrong type in return statement\n");
+            if (typeNode.toString() != T.toString() && T != SymbolTableEntry.Type.Any){
+                System.out.print("Return type in method dont match\n");
             }
         }
         else if (node.TypeNA1.size() == 0 && node.ReturnStmtNA.size() == 1){
@@ -182,8 +211,6 @@ public class BuildSymbolTable implements VisitAST{
         else if (node.TypeNA1.size() == 1 && node.ReturnStmtNA.size() == 0){
             System.out.print("No return statement found\n");
         }
-        entry.ID = node.IdN.toString();
-        SymbolTable.put(node.IdN.toString(),entry);
     }
 
     @Override
@@ -218,79 +245,59 @@ public class BuildSymbolTable implements VisitAST{
                 case "Coordinate": entry.type = SymbolTableEntry.Type.Coordinate; break;
             }
             entry.ID = ((AssignmentStmtNode2) node).IdN.toString();
-            //Check expression
+            SymbolTableEntry.Type T = checkExpression(((AssignmentStmtNode2) node).ExpressionN, Sym);
+            if (entry.type != T && T != SymbolTableEntry.Type.Any){
+                System.out.print("Type and expression of AssignmentStmtNode2 dont match\n");
+            }
+            if (entry.type == SymbolTableEntry.Type.Piece){
+                SymbolTableEntry E1 = new SymbolTableEntry();
+                E1.type = SymbolTableEntry.Type.Any;
+                E1.ID = entry.ID + ".PlaceAt()";
+
+                SymbolTableEntry E11 = new SymbolTableEntry();
+                E11.type = SymbolTableEntry.Type.Coordinate;
+                E11.ID = "Coordinate";
+                E1.inputs.add(E11);
+
+                Sym.put(E1.ID, E1);
+
+                SymbolTableEntry E2 = new SymbolTableEntry();
+                E2.type = SymbolTableEntry.Type.Any;
+                E2.ID = entry.ID + ".MoveTo()";
+
+                SymbolTableEntry E21 = new SymbolTableEntry();
+                E21.type = SymbolTableEntry.Type.Coordinate;
+                E21.ID = "Coordinate";
+                E2.inputs.add(E21);
+
+                Sym.put(E2.ID, E2);
+            }
         }
         else if (node instanceof AssignmentStmtNode3){
-            if (Sym.containsKey(((AssignmentStmtNode3) node).IdNA.toString())){
-                SymbolTableEntry.Type type = Sym.get(((AssignmentStmtNode3) node).IdNA.toString()).type;
-                //Check expression
-                ExpressionNode temp = ((AssignmentStmtNode3) node).ExpressionN;
-                if (temp instanceof AddNode || temp instanceof SubtractNode ||
-                        temp instanceof multiplyNode || temp instanceof DivideNode ||
-                        temp instanceof ModNode || temp instanceof MinusNode ||
-                        (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof NumberValueNode)){
-                    if (type != SymbolTableEntry.Type.Number){
-                        System.out.print("Types dont match\n");
-                    }
+            String tempString = "";
+            for (int i = 0; i < ((AssignmentStmtNode3) node).IdNA.size(); i++){
+                tempString += ((AssignmentStmtNode3) node).IdNA.get(i).toString();
+                if (i != ((AssignmentStmtNode3) node).IdNA.size()-1){
+                    tempString += ".";
                 }
-                if (temp instanceof AndNode || temp instanceof OrNode ||
-                        temp instanceof EqualsNode || temp instanceof NotEqualsNode ||
-                        temp instanceof LessThanNode || temp instanceof LargerThanNode ||
-                        temp instanceof EqualOrLessThanNode || temp instanceof EqualOrLargerThanNode ||
-                        temp instanceof NegationNode || (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof BoolValueNode)){
-                    if (type != SymbolTableEntry.Type.Boolean){
-                        System.out.print("Types dont match\n");
-                    }
-                }
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof TextValueNode){
-                    if (type != SymbolTableEntry.Type.Text){
-                        System.out.print("Types dont match\n");
-                    }
-                }
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof StmtMethodValueNode){
-                    if (Sym.containsKey(((StmtMethodValueNode) ((ValueTermNode) temp).ValueN).StmtMethodNA.toString())){
-                        if (type != Sym.get(((StmtMethodValueNode) ((ValueTermNode) temp).ValueN).StmtMethodNA.toString()).type){
-                            System.out.print("Types dont match\n");
-                        }
-                    }
-                    else {
-                        System.out.print("Non defined ID for StmtMethod\n");
-                    }
-                }
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof ListValueNode){
-                    boolean containId = true;
-                    boolean containPieces = true;
-                    for (ValueNode V : ((ListValueNode) ((ValueTermNode) temp).ValueN).ValueNA) {
-                        if (V instanceof StmtMethodValueNode){
-                            if (!Sym.containsKey(V.toString())){
-                                containId = false;
-                            }
-                        }
-                    }
-                    if (!containId){
-                        System.out.print("Non defined ID for ListValueNode\n");
-                    }
-                    entry.type = SymbolTableEntry.Type.List;
-                }
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof CoordinateValueNode){
-                    entry.type = SymbolTableEntry.Type.Coordinate;
-                }
-                if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof MoveValueNode){
-                    entry.type = SymbolTableEntry.Type.Move;
+            }
+            SymbolTableEntry.Type T = checkExpression(((AssignmentStmtNode3) node).ExpressionN, Sym);
+            if (Sym.containsKey(tempString)){
+                if (Sym.get(tempString).type != T && T != SymbolTableEntry.Type.Any){
+                    System.out.print("Type and expression of AssignmentStmtNode3 dont match\n");
                 }
             }
         }
         else if (node instanceof IfStmtNode){
             ExpressionNode temp = ((IfStmtNode) node).ExpressionN;
-            if (!(temp instanceof AndNode || temp instanceof OrNode ||
-                    temp instanceof EqualsNode || temp instanceof NotEqualsNode ||
-                    temp instanceof LessThanNode || temp instanceof LargerThanNode ||
-                    temp instanceof EqualOrLessThanNode || temp instanceof EqualOrLargerThanNode ||
-                    temp instanceof NegationNode || (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof BoolValueNode))){
+            SymbolTableEntry.Type type = checkExpression(temp, Sym);
+            if (type != SymbolTableEntry.Type.Boolean){
                 System.out.print("Not bool in If statement\n");
             }
             for (StmtNode S : ((IfStmtNode) node).StmtNA) {
-                visitStmt(S);
+                if (getEntry(S, Sym).ID != ""){
+                    Sym.put(getEntry(S, Sym).ID, getEntry(S, Sym));
+                }
             }
             for (ElsIfNode S : ((IfStmtNode) node).ElsIfNA) {
                 visitElsIf(S);
@@ -299,37 +306,48 @@ public class BuildSymbolTable implements VisitAST{
                 visitEls(((IfStmtNode) node).ElsNA.get(0));
             }
         }
-        else if (node instanceof RepeatWhileStmtNode){
+        else if (node instanceof RepeatWhileStmtNode){ // Her
             ExpressionNode temp = ((RepeatWhileStmtNode) node).ExpressionN;
-            if (!(temp instanceof AndNode || temp instanceof OrNode ||
-                    temp instanceof EqualsNode || temp instanceof NotEqualsNode ||
-                    temp instanceof LessThanNode || temp instanceof LargerThanNode ||
-                    temp instanceof EqualOrLessThanNode || temp instanceof EqualOrLargerThanNode ||
-                    temp instanceof NegationNode || (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof BoolValueNode))){
+            SymbolTableEntry.Type type = checkExpression(temp, Sym);
+            if (type != SymbolTableEntry.Type.Boolean){
                 System.out.print("Not bool in RepeatWhile statement\n");
             }
             for (StmtNode S : ((RepeatWhileStmtNode) node).StmtNA) {
-                visitStmt(S);
+                if (getEntry(S, Sym).ID != ""){
+                    Sym.put(getEntry(S, Sym).ID, getEntry(S, Sym));
+                }
             }
         }
         else if (node instanceof RepeatStmtNode){
             for (StmtNode S : ((RepeatStmtNode) node).StmtNA) {
-                visitStmt(S);
+                if (getEntry(S, Sym).ID != ""){
+                    Sym.put(getEntry(S, Sym).ID, getEntry(S, Sym));
+                }
             }
         }
         else if (node instanceof OptionsStmtNode){
             ExpressionNode temp = ((OptionsStmtNode) node).ExpressionN;
-            if(!(temp instanceof AddNode || temp instanceof SubtractNode ||
-                    temp instanceof multiplyNode || temp instanceof DivideNode ||
-                    temp instanceof ModNode || temp instanceof MinusNode ||
-                    (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof NumberValueNode))){
-                System.out.print("Not Number in Options statement\n");
+            SymbolTableEntry.Type type = checkExpression(temp,Sym);
+            if (type != SymbolTableEntry.Type.Number && type != SymbolTableEntry.Type.Any){
+                System.out.print("Not a number in OptionsStmt\n");
             }
             for (OptionNode O : ((OptionsStmtNode) node).OptionNA) {
-                visitOption(O);
+                type = checkExpression(O.ExpressionN, Sym);
+                if (type != SymbolTableEntry.Type.Number && type != SymbolTableEntry.Type.Any){
+                    System.out.print("Not a number in Option\n");
+                }
+                for (StmtNode S : O.StmtNA) {
+                    if (getEntry(S, Sym).ID != ""){
+                        Sym.put(getEntry(S, Sym).ID, getEntry(S, Sym));
+                    }
+                }
             }
             if(((OptionsStmtNode) node).DefNA.size() == 1) {
-                visitDef(((OptionsStmtNode) node).DefNA.get(0));
+                for (StmtNode S : ((OptionsStmtNode) node).DefNA.get(0).StmtNA) {
+                    if (getEntry(S, Sym).ID != ""){
+                        Sym.put(getEntry(S, Sym).ID, getEntry(S, Sym));
+                    }
+                }
             }
         }
         else if (node instanceof ForeachStmtNode){
@@ -342,7 +360,75 @@ public class BuildSymbolTable implements VisitAST{
                 System.out.print("Non defined ID in Foreach\n");
             }
             for (StmtNode S : ((ForeachStmtNode) node).StmtNA) {
-                visitStmt(S);
+                if (getEntry(S, Sym).ID != ""){
+                    Sym.put(getEntry(S, Sym).ID, getEntry(S, Sym));
+                }
+            }
+        }
+        else if (node instanceof MethodCallNode){
+            String temp = "";
+            for (MCNode M : ((MethodCallNode) node).MCNA) {
+                if (M instanceof MCNode1){
+                    if (((MCNode1) M).IdN.toString().replaceAll("[0-9]", "X").equals("PieceX")){
+                        temp += ((MCNode1) M).IdN.toString().replaceAll("[0-9]", "X") + ".";
+                    }
+                    else {
+                        temp += ((MCNode1) M).IdN.toString() + ".";
+                    }
+                }
+                if (M instanceof MCNode2){
+                    temp += ((MCNode2) M).IdN.toString() + "().";
+                }
+            }
+            temp += ((MethodCallNode) node).IdN.toString() + "()";
+            if (!Sym.containsKey(temp)){
+                System.out.print("Method not found\n");
+            }
+            else {
+                if (Sym.get(temp).inputs.size() == ((MethodCallNode) node).ValueNA.size()){
+                    for (int i = 0; i < Sym.get(temp).inputs.size(); i++){
+                        if (((MethodCallNode) node).ValueNA.get(i) instanceof NumberValueNode){
+                            if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Number && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                System.out.print("Method input type dont match\n");
+                            }
+                        }
+                        else if (((MethodCallNode) node).ValueNA.get(i) instanceof CoordinateValueNode){
+                            if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Coordinate && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                System.out.print("Method input type dont match\n");
+                            }
+                        }
+                        else if (((MethodCallNode) node).ValueNA.get(i) instanceof ListValueNode){
+                            if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.List && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                System.out.print("Method input type dont match\n");
+                            }
+                        }
+                        else if (((MethodCallNode) node).ValueNA.get(i) instanceof BoolValueNode){
+                            if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Boolean && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                System.out.print("Method input type dont match\n");
+                            }
+                        }
+                        else if (((MethodCallNode) node).ValueNA.get(i) instanceof TextValueNode){
+                            if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Text && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                System.out.print("Method input type dont match\n");
+                            }
+                        }
+                        else if (((MethodCallNode) node).ValueNA.get(i) instanceof MoveValueNode){
+                            if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Move && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                System.out.print("Method input type dont match\n");
+                            }
+                        }
+                        else if (((MethodCallNode) node).ValueNA.get(i) instanceof StmtMethodValueNode){
+                            if (Sym.containsKey(((MethodCallNode) node).ValueNA.get(i).toString())){
+                                if (Sym.get(((MethodCallNode) node).ValueNA.get(i).toString()).type != Sym.get(temp).inputs.get(i).type){
+                                    System.out.print("Method input type dont match\n");
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    System.out.print("Wrong amount of input in method");
+                }
             }
         }
 
@@ -355,7 +441,7 @@ public class BuildSymbolTable implements VisitAST{
         if (node instanceof AssignmentStmtNode1){
             SymbolTableEntry entry1 = new SymbolTableEntry();
             entry1.ID = "Moves";
-            entry1.type = SymbolTableEntry.Type.Move;
+            entry1.type = SymbolTableEntry.Type.List;
             entry.SymbolTable.put(entry1.ID, entry1);
             for (StmtNode S : ((AssignmentStmtNode1) node).PieceTypeN.StmtNA) {
                 if (getEntry(S, entry.SymbolTable).ID != ""){
@@ -372,8 +458,15 @@ public class BuildSymbolTable implements VisitAST{
             }
         }
         if (node instanceof AssignmentStmtNode3){
-            if (SymbolTable.containsKey(((AssignmentStmtNode3) node).IdNA.toString())){
-                SymbolTableEntry.Type type = SymbolTable.get(((AssignmentStmtNode3) node).IdNA.toString()).type;
+            String tempString = "";
+            for (int i = 0; i < ((AssignmentStmtNode3) node).IdNA.size(); i++){
+                tempString += ((AssignmentStmtNode3) node).IdNA.get(i).toString();
+                if (i != ((AssignmentStmtNode3) node).IdNA.size()-1){
+                    tempString += ".";
+                }
+            }
+            if (SymbolTable.containsKey(tempString)){
+                SymbolTableEntry.Type type = SymbolTable.get(tempString).type;
                 //Check expression
                 ExpressionNode temp = ((AssignmentStmtNode3) node).ExpressionN;
                 if (temp instanceof ValueTermNode && ((ValueTermNode) temp).ValueN instanceof ListValueNode){
@@ -391,13 +484,20 @@ public class BuildSymbolTable implements VisitAST{
                     if (containPieces){
                         for (int i = 0; i < ((ListValueNode) ((ValueTermNode) temp).ValueN).ValueNA.size(); i++) {
                             SymbolTableEntry entry1 = new SymbolTableEntry();
-                            entry1.ID = ((AssignmentStmtNode3) node).IdNA.toString() + ".Piece" + i;
+
+                            entry1.ID = tempString + ".Piece" + i;
                             entry1.type = SymbolTableEntry.Type.Piece;
                             SymbolTable.put(entry1.ID, entry1);
 
                             SymbolTableEntry entry2 = new SymbolTableEntry();
-                            entry2.ID = ((AssignmentStmtNode3) node).IdNA.toString() + ".Piece" + i + ".CanMoveTo()";
+                            entry2.ID = tempString + ".Piece" + i + ".CanMoveTo()";
                             entry2.type = SymbolTableEntry.Type.Boolean;
+
+                            SymbolTableEntry entry21 = new SymbolTableEntry();
+                            entry21.type = SymbolTableEntry.Type.Coordinate;
+                            entry21.ID = "Coordinate";
+                            entry2.inputs.add(entry21);
+
                             SymbolTable.put(entry2.ID, entry2);
                         }
                     }
@@ -426,6 +526,12 @@ public class BuildSymbolTable implements VisitAST{
                 SymbolTableEntry entry3 = new SymbolTableEntry();
                 entry3.ID = temp + ".PieceList.Contains()";
                 entry3.type = SymbolTableEntry.Type.Boolean;
+
+                SymbolTableEntry entry31 = new SymbolTableEntry();
+                entry31.type = SymbolTableEntry.Type.Piece;
+                entry31.ID = "Piece";
+                entry3.inputs.add(entry31);
+
                 SymbolTable.put(entry3.ID, entry3);
 
                 SymbolTableEntry entry4 = new SymbolTableEntry();
@@ -442,6 +548,11 @@ public class BuildSymbolTable implements VisitAST{
                 entry6.ID = temp + ".PlayerList.ItemCount";
                 entry6.type = SymbolTableEntry.Type.Number;
                 SymbolTable.put(entry6.ID, entry6);
+
+                SymbolTableEntry entry7 = new SymbolTableEntry();
+                entry7.ID = temp + ".Win()";
+                entry7.type = SymbolTableEntry.Type.Boolean;
+                SymbolTable.put(entry7.ID, entry7);
             }
         }
         else if (node instanceof PlayersNode2){
@@ -463,6 +574,12 @@ public class BuildSymbolTable implements VisitAST{
                 SymbolTableEntry entry3 = new SymbolTableEntry();
                 entry3.ID = temp + ".PieceList.Contains()";
                 entry3.type = SymbolTableEntry.Type.Boolean;
+
+                SymbolTableEntry entry31 = new SymbolTableEntry();
+                entry31.type = SymbolTableEntry.Type.Piece;
+                entry31.ID = "Piece";
+                entry3.inputs.add(entry31);
+
                 SymbolTable.put(entry3.ID, entry3);
 
                 SymbolTableEntry entry4 = new SymbolTableEntry();
@@ -479,6 +596,11 @@ public class BuildSymbolTable implements VisitAST{
                 entry6.ID = temp + ".PlayerList.ItemCount";
                 entry6.type = SymbolTableEntry.Type.Number;
                 SymbolTable.put(entry6.ID, entry6);
+
+                SymbolTableEntry entry7 = new SymbolTableEntry();
+                entry7.ID = temp + ".Win()";
+                entry7.type = SymbolTableEntry.Type.Boolean;
+                SymbolTable.put(entry7.ID, entry7);
             }
         }
     }
@@ -486,8 +608,19 @@ public class BuildSymbolTable implements VisitAST{
     @Override
     public void visitTurn(TurnNode node) {
         SymbolTableEntry entry = new SymbolTableEntry();
-        SymbolTableEntry entry1 = new SymbolTableEntry();
 
+        SymbolTableEntry setUp = new SymbolTableEntry();
+        setUp.ID = node.IdN.toString();
+        setUp.type = SymbolTableEntry.Type.Turn;
+        if (!setUp.ID.toString().equals("")){
+            SymbolTable.put(setUp.ID, setUp);
+        }
+
+        for (SymbolTableEntry E : SymbolTable.values()) {
+            entry.SymbolTable.put(E.ID, E);
+        }
+
+        SymbolTableEntry entry1 = new SymbolTableEntry();
         entry1.ID = "PlayerPieceList";
         entry1.type = SymbolTableEntry.Type.List;
         entry.SymbolTable.put(entry1.ID, entry1);
@@ -505,6 +638,12 @@ public class BuildSymbolTable implements VisitAST{
         SymbolTableEntry entry4 = new SymbolTableEntry();
         entry4.ID = "PlayerAll.PieceList.Contains()";
         entry4.type = SymbolTableEntry.Type.Boolean;
+
+        SymbolTableEntry entry41 = new SymbolTableEntry();
+        entry41.type = SymbolTableEntry.Type.Piece;
+        entry41.ID = "Piece";
+        entry4.inputs.add(entry41);
+
         entry.SymbolTable.put(entry4.ID, entry4);
 
         SymbolTableEntry entry5 = new SymbolTableEntry();
@@ -518,14 +657,36 @@ public class BuildSymbolTable implements VisitAST{
         entry.SymbolTable.put(entry6.ID, entry6);
 
         SymbolTableEntry entry7 = new SymbolTableEntry();
-        entry7.ID = "PlayerAll.PlayerList.ItemCount";
-        entry7.type = SymbolTableEntry.Type.Number;
+        entry7.ID = "PlayerAll.PlayerList.Add()";
+        entry7.type = SymbolTableEntry.Type.Any;
+
+        SymbolTableEntry entry71 = new SymbolTableEntry();
+        entry71.type = SymbolTableEntry.Type.Any;
+        entry71.ID = "Any";
+        entry7.inputs.add(entry71);
+
         entry.SymbolTable.put(entry7.ID, entry7);
 
         SymbolTableEntry entry8 = new SymbolTableEntry();
-        entry8.ID = "PlayerAll.PieceX.CanMoveTo()";
-        entry8.type = SymbolTableEntry.Type.Boolean;
+        entry8.ID = "PlayerAll.PlayerList.ItemCount";
+        entry8.type = SymbolTableEntry.Type.Number;
         entry.SymbolTable.put(entry8.ID, entry8);
+
+        SymbolTableEntry entry9 = new SymbolTableEntry();
+        entry9.ID = "PlayerAll.PieceX.CanMoveTo()";
+        entry9.type = SymbolTableEntry.Type.Boolean;
+
+        SymbolTableEntry entry91 = new SymbolTableEntry();
+        entry91.type = SymbolTableEntry.Type.Coordinate;
+        entry91.ID = "Coordinate";
+        entry9.inputs.add(entry91);
+
+        entry.SymbolTable.put(entry9.ID, entry9);
+
+        SymbolTableEntry entry10 = new SymbolTableEntry();
+        entry10.ID = "Input()";
+        entry10.type = SymbolTableEntry.Type.Any;
+        entry.SymbolTable.put(entry10.ID, entry10);
 
         for (StmtNode S : node.StmtNA) {
             if (getEntry(S, entry.SymbolTable).ID != ""){
@@ -535,7 +696,9 @@ public class BuildSymbolTable implements VisitAST{
 
         entry.ID = node.IdN.toString();
         entry.type = SymbolTableEntry.Type.Turn;
-        SymbolTable.put(node.IdN.toString(),entry);
+        if (!entry.ID.toString().equals("")){
+            SymbolTable.put(node.IdN.toString(),entry);
+        }
     }
 
     @Override
@@ -646,22 +809,297 @@ public class BuildSymbolTable implements VisitAST{
 
     }
 
-    public boolean checkExpression(ExpressionNode node){
-        Boolean B = true;
+    public SymbolTableEntry.Type checkExpression(ExpressionNode node, HashMap<String, SymbolTableEntry> Sym){
+        SymbolTableEntry.Type T = null;
+        SymbolTableEntry.Type T1 = null;
+        SymbolTableEntry.Type T2 = null;
 
         if (node instanceof BinaryExpressionNode){
-            if ()
+            if (((BinaryExpressionNode) node).LeftN instanceof ValueTermNode && ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN instanceof StmtMethodValueNode) {
+                String temp = "";
+                String temp2 = ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN).StmtMethodNA.get(0).toString().replaceAll("[0-9]","");
+                if (temp2.equals("PlayerAll.Piece")){
+                    temp = ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN.toString().replaceAll("[(].+[)]", "()").replaceAll("[0-9]", "X");
+                }
+                else {
+                    for (int i = 0; i < ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN).StmtMethodNA.size(); i++) {
+                        temp += ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN).StmtMethodNA.get(i).toString().replaceAll("[(].+[)]", "()");
+                        if (i < ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN).StmtMethodNA.size() - 1){
+                            temp += ".";
+                        }
+                    }
+                }
+                if (Sym.containsKey(temp)) {
+                    T1 = Sym.get(temp).type;
+                    int size = ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN).StmtMethodNA.size() - 1;
+                    if (((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN).StmtMethodNA.get(size) instanceof StmtMethodNode1){
+                        StmtMethodNode1 node1 = (StmtMethodNode1) ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).LeftN).ValueN).StmtMethodNA.get(size);
+                        if (Sym.get(temp).inputs.size() == node1.ValueNA.size()){
+                            for (int i = 0; i < Sym.get(temp).inputs.size(); i++){
+                                if (node1.ValueNA.get(i) instanceof NumberValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Number && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof CoordinateValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Coordinate && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof ListValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.List && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof BoolValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Boolean && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof TextValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Text && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof MoveValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Move && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof StmtMethodValueNode){
+                                    if (Sym.containsKey(node1.ValueNA.get(i).toString())){
+                                        if (Sym.get(node1.ValueNA.get(i).toString()).type != Sym.get(temp).inputs.get(i).type){
+                                            System.out.print("Method input type dont match\n");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            System.out.print("Wrong amount of input in method");
+                        }
+                    }
+                }
+                else {
+                    System.out.print("Left StmtMethod from expression not found in Symboltable\n");
+                }
+            }
+            else {
+                T1 = checkExpression(((BinaryExpressionNode) node).LeftN, Sym);
+            }
+
+            if (((BinaryExpressionNode) node).RightN instanceof ValueTermNode && ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN instanceof StmtMethodValueNode) {
+                String temp = "";
+                String temp2 = ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN).StmtMethodNA.get(0).toString().replaceAll("[0-9]","");
+                if (temp2.equals("PlayerAll.Piece")){
+                    temp = ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN.toString().replaceAll("[(].+[)]", "()").replaceAll("[0-9]", "X");
+                }
+                else {
+                    for (int i = 0; i < ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN).StmtMethodNA.size(); i++) {
+                        temp += ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN).StmtMethodNA.get(i).toString().replaceAll("[(].+[)]", "()");
+                        if (i < ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN).StmtMethodNA.size() - 1){
+                            temp += ".";
+                        }
+                    }
+                }
+                if (Sym.containsKey(temp)) {
+                    T2 = Sym.get(temp).type;
+                    int size = ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN).StmtMethodNA.size() - 1;
+                    if (((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN).StmtMethodNA.get(size) instanceof StmtMethodNode1){
+                        StmtMethodNode1 node1 = (StmtMethodNode1) ((StmtMethodValueNode) ((ValueTermNode) ((BinaryExpressionNode) node).RightN).ValueN).StmtMethodNA.get(size);
+                        if (Sym.get(temp).inputs.size() == node1.ValueNA.size()){
+                            for (int i = 0; i < Sym.get(temp).inputs.size(); i++){
+                                if (node1.ValueNA.get(i) instanceof NumberValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Number && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof CoordinateValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Coordinate && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof ListValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.List && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof BoolValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Boolean && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof TextValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Text && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof MoveValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Move && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof StmtMethodValueNode){
+                                    if (Sym.containsKey(node1.ValueNA.get(i).toString())){
+                                        if (Sym.get(node1.ValueNA.get(i).toString()).type != Sym.get(temp).inputs.get(i).type){
+                                            System.out.print("Method input type dont match\n");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            System.out.print("Wrong amount of input in method");
+                        }
+                    }
+                }
+                else {
+                    System.out.print("Rigth StmtMethod from expression not found in Symboltable\n");
+                }
+            }
+            else {
+                T2 = checkExpression(((BinaryExpressionNode) node).RightN, Sym);
+            }
+            if (T1 != null && T1 == T2){
+                if (node instanceof AndNode || node instanceof OrNode ||
+                        node instanceof LessThanNode || node instanceof LargerThanNode ||
+                        node instanceof EqualOrLessThanNode || node instanceof EqualOrLargerThanNode){
+                    if (T1 == SymbolTableEntry.Type.Boolean){
+                        T = SymbolTableEntry.Type.Boolean;
+                    }
+                    else {
+                        System.out.print("Operant dont match\n");
+                    }
+                }
+                else if (node instanceof AddNode || node instanceof SubtractNode ||
+                        node instanceof multiplyNode || node instanceof DivideNode ||
+                        node instanceof ModNode){
+                    if (T1 == SymbolTableEntry.Type.Number){
+                        T = SymbolTableEntry.Type.Number;
+                    }
+                    else {
+                        System.out.print("Operant dont match\n");
+                    }
+                }
+                else if (node instanceof EqualsNode || node instanceof NotEqualsNode){
+                    if (T1 == SymbolTableEntry.Type.Boolean || T1 == SymbolTableEntry.Type.Number){
+                        T = SymbolTableEntry.Type.Boolean;
+                    }
+                    else {
+                        System.out.print("Operant dont match\n");
+                    }
+                }
+            }
+            else {
+                System.out.print("Left and Rigth expression dont match\n");
+            }
         }
         else if (node instanceof ValueTermNode){
-
+            if (((ValueTermNode) node).ValueN instanceof StmtMethodValueNode){
+                String temp = "";
+                String temp2 = ((StmtMethodValueNode) ((ValueTermNode) node).ValueN).StmtMethodNA.get(0).toString().replaceAll("[0-9]","");
+                if (temp2.equals("PlayerAll.Piece")){
+                    temp = ((ValueTermNode) node).ValueN.toString().replaceAll("[(].+[)]", "()").replaceAll("[0-9]", "X");
+                }
+                else {
+                    for (int i = 0; i < ((StmtMethodValueNode) ((ValueTermNode) node).ValueN).StmtMethodNA.size(); i++) {
+                        temp += ((StmtMethodValueNode) ((ValueTermNode) node).ValueN).StmtMethodNA.get(i).toString().replaceAll("[(].+[)]", "()");
+                        if (i < ((StmtMethodValueNode) ((ValueTermNode) node).ValueN).StmtMethodNA.size() - 1){
+                            temp += ".";
+                        }
+                    }
+                }
+                if (Sym.containsKey(temp)){
+                    T = Sym.get(temp).type;
+                    int size = ((StmtMethodValueNode) ((ValueTermNode) node).ValueN).StmtMethodNA.size() - 1;
+                    if (((StmtMethodValueNode) ((ValueTermNode) node).ValueN).StmtMethodNA.get(size) instanceof StmtMethodNode1){
+                        StmtMethodNode1 node1 = (StmtMethodNode1) ((StmtMethodValueNode) ((ValueTermNode) node).ValueN).StmtMethodNA.get(size);
+                        if (Sym.get(temp).inputs.size() == node1.ValueNA.size()){
+                            for (int i = 0; i < Sym.get(temp).inputs.size(); i++){
+                                if (node1.ValueNA.get(i) instanceof NumberValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Number && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof CoordinateValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Coordinate && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof ListValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.List && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof BoolValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Boolean && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof TextValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Text && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof MoveValueNode){
+                                    if (Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Move && Sym.get(temp).inputs.get(i).type != SymbolTableEntry.Type.Any){
+                                        System.out.print("Method input type dont match\n");
+                                    }
+                                }
+                                else if (node1.ValueNA.get(i) instanceof StmtMethodValueNode){
+                                    if (Sym.containsKey(node1.ValueNA.get(i).toString())){
+                                        if (Sym.get(node1.ValueNA.get(i).toString()).type != Sym.get(temp).inputs.get(i).type){
+                                            System.out.print("Method input type dont match\n");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            System.out.print("Wrong amount of input in method");
+                        }
+                    }
+                }
+                else {
+                    System.out.print("Non defined ID in expression\n");
+                }
+            }
+            else if (((ValueTermNode) node).ValueN instanceof BoolValueNode){
+                T = SymbolTableEntry.Type.Boolean;
+            }
+            else if (((ValueTermNode) node).ValueN instanceof NumberValueNode){
+                T = SymbolTableEntry.Type.Number;
+            }
+            else if (((ValueTermNode) node).ValueN instanceof TextValueNode){
+                T = SymbolTableEntry.Type.Text;
+            }
+            else if (((ValueTermNode) node).ValueN instanceof CoordinateValueNode){
+                T = SymbolTableEntry.Type.Coordinate;
+            }
+            else if (((ValueTermNode) node).ValueN instanceof ListValueNode){
+                T = SymbolTableEntry.Type.List;
+            }
+            else if (((ValueTermNode) node).ValueN instanceof MoveValueNode){
+                T = SymbolTableEntry.Type.Move;
+            }
         }
         else if (node instanceof NegationNode){
-
+            if (checkExpression(((NegationNode) node).InnerN, Sym) == SymbolTableEntry.Type.Boolean){
+                T = SymbolTableEntry.Type.Boolean;
+            }
+            else {
+                System.out.print("not a Boolean in negationNode");
+            }
         }
         else if (node instanceof MinusNode){
-
+            if (checkExpression(((MinusNode) node).InnerN, Sym) == SymbolTableEntry.Type.Number){
+                T = SymbolTableEntry.Type.Number;
+            }
+            else {
+                System.out.print("not a Number in minusNode");
+            }
         }
 
-        return B;
+        return T;
     }
 }
